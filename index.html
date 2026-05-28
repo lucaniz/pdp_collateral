@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDP Collateral Calculator</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --panel:#ffffff;
+    --panel-2:#f4f7fb;
+    --border:#e2e8f0;
+    --border-strong:#cdd9e8;
+    --ink:#0b1f33;
+    --muted:#5a6b7e;
+    --faint:#90a0b3;
+    --fil:#0090ff;
+    --fil-deep:#0066cc;
+    --fil-soft:#e6f3ff;
+    --accent-2:#00b3a4;
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,"Cascadia Code",Menlo,monospace;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;padding:28px 22px 60px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:980px;margin:0 auto}
+
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .brand .logo{height:48px;width:48px;object-fit:contain;display:block}
+  .brand .lk{display:flex;flex-direction:column;line-height:1.08}
+  .brand .lk .t1{font-size:17px;font-weight:700;letter-spacing:-0.01em;color:var(--ink)}
+  .brand .lk .t2{font-size:13px;color:var(--muted);font-weight:500}
+
+  header{margin-bottom:22px;border-bottom:1px solid var(--border);padding-bottom:18px}
+  h1{font-size:21px;font-weight:600;letter-spacing:-0.01em}
+  .formula{font-family:var(--mono);background:var(--fil-soft);border:1px solid #cde6ff;border-radius:8px;padding:11px 14px;margin-top:14px;font-size:13px;color:var(--ink);overflow-x:auto;white-space:nowrap;}
+  .formula b{color:var(--fil-deep)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 18px 20px;box-shadow:0 1px 2px rgba(11,31,51,.04), 0 1px 12px rgba(11,31,51,.03);}
+  .card.network{border-color:#bdeee8}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--fil)}
+  .network .dot{background:var(--accent-2)}
+
+  .field{margin-bottom:15px}
+  .field label{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted);margin-bottom:6px;}
+  .field label .val{font-family:var(--mono);color:var(--ink);font-size:13px;font-weight:600;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:3px;background:var(--border-strong);outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--fil);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--fil), 0 1px 3px rgba(0,144,255,.4);}
+  .network input[type=range]::-webkit-slider-thumb{background:var(--accent-2);box-shadow:0 0 0 1px var(--accent-2), 0 1px 3px rgba(0,179,164,.4);}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--fil);cursor:pointer;border:2px solid #fff;}
+  input[type=number]{width:100%;background:#fff;border:1px solid var(--border-strong);border-radius:6px;color:var(--ink);font-family:var(--mono);font-size:13px;padding:7px 9px;}
+  input[type=number]:focus{outline:none;border-color:var(--fil);box-shadow:0 0 0 3px var(--fil-soft)}
+
+  .out{margin-top:6px;border-top:1px solid var(--border);padding-top:16px;}
+  .out .big{font-family:var(--mono);font-size:27px;font-weight:600;color:var(--fil-deep);letter-spacing:-0.01em;line-height:1.1;}
+  .network .out .big{color:var(--accent-2)}
+  .out .biglbl{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+  .out .fil{font-family:var(--mono);font-size:15px;color:var(--ink);margin-top:9px;}
+  .out .fil span{color:var(--muted);font-size:12.5px}
+
+  .shared{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-top:18px;}
+  .shared h2{font-size:13px;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);font-weight:600;margin-bottom:14px}
+  .shared .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:620px){.shared .row3{grid-template-columns:1fr}}
+
+  .note{margin-top:20px;font-size:12px;color:var(--faint);line-height:1.65;border-left:2px solid var(--border-strong);padding-left:13px;}
+  .note b{color:var(--muted);font-weight:600}
+  .note i{color:var(--fil-deep);font-style:normal;font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="foc-logo.png" alt="Filecoin Onchain Cloud" class="logo">
+    <div class="lk">
+      <span class="t1">Filecoin</span>
+      <span class="t2">Onchain Cloud</span>
+    </div>
+  </div>
+
+  <header>
+    <h1>PDP Collateral Calculator</h1>
+    <div class="formula">Collateral<sub>SP</sub> = <b>N</b> &times; ( TiB<sub>stored</sub> &times; <b>price</b> &times; <b>&alpha;</b> )&nbsp;&nbsp;&rarr; USD, then converted to FIL</div>
+  </header>
+
+  <div class="shared">
+    <h2>Shared parameters</h2>
+    <div class="row3">
+      <div class="field" style="margin-bottom:0">
+        <label>N &mdash; months of revenue locked as collateral <span class="val" id="vN">3</span></label>
+        <input type="range" id="N" min="0" max="24" step="0.5" value="3">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>&alpha; &mdash; coefficient <span class="val" id="vA">1.00</span></label>
+        <input type="range" id="A" min="0" max="1" step="0.01" value="1">
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Price &mdash; USD / TiB / month</label>
+        <input type="number" id="price" value="2.00" step="0.1" min="0">
+      </div>
+    </div>
+    <div class="row3" style="margin-top:14px">
+      <div class="field" style="margin-bottom:0">
+        <label>FIL price &mdash; USD</label>
+        <input type="number" id="fil" value="3.00" step="0.05" min="0.0001">
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card single">
+      <h2><span class="dot"></span> Single SP</h2>
+      <div class="field">
+        <label>Stored data &mdash; TiB <span class="val" id="vTiB">1,000</span></label>
+        <input type="range" id="tib" min="1" max="100000" step="1" value="1000">
+      </div>
+      <div class="field">
+        <label>or enter exact TiB</label>
+        <input type="number" id="tibExact" value="1000" step="1" min="0">
+      </div>
+      <div class="out">
+        <div class="biglbl">Collateral (USD)</div>
+        <div class="big" id="spUSD">$6,000</div>
+        <div class="fil" id="spFIL">2,000 FIL <span>locked</span></div>
+      </div>
+    </div>
+
+    <div class="card network">
+      <h2><span class="dot"></span> Network-wide rollup</h2>
+      <div class="field">
+        <label>Total PDP-served data &mdash; PiB <span class="val" id="vPiB">10</span></label>
+        <input type="range" id="pib" min="0.1" max="1000" step="0.1" value="10">
+      </div>
+      <div class="field">
+        <label>or enter exact PiB</label>
+        <input type="number" id="pibExact" value="10" step="0.1" min="0">
+      </div>
+      <div class="out">
+        <div class="biglbl">Total locked collateral (USD)</div>
+        <div class="big" id="nwUSD">$61.4M</div>
+        <div class="fil" id="nwFIL">20.5M FIL <span>locked network-wide</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const TIB_PER_PIB = 1024;
+  function fmtUSD(x){
+    if (x >= 1e9) return '$' + (x/1e9).toFixed(2) + 'B';
+    if (x >= 1e6) return '$' + (x/1e6).toFixed(2) + 'M';
+    if (x >= 1e3) return '$' + (x/1e3).toFixed(1) + 'K';
+    return '$' + x.toFixed(0);
+  }
+  function fmtFIL(x){
+    if (x >= 1e6) return (x/1e6).toFixed(2) + 'M FIL';
+    if (x >= 1e3) return (x/1e3).toFixed(1) + 'K FIL';
+    return x.toFixed(0) + ' FIL';
+  }
+  function fmtNum(x){ return x.toLocaleString('en-US',{maximumFractionDigits:0}); }
+  function recalc(){
+    const N = parseFloat($('N').value);
+    const A = parseFloat($('A').value);
+    const price = parseFloat($('price').value) || 0;
+    const filPrice = parseFloat($('fil').value) || 0.0001;
+    $('vN').textContent = N;
+    $('vA').textContent = A.toFixed(2);
+    const tib = parseFloat($('tibExact').value) || 0;
+    const spUSD = N * (tib * price * A);
+    $('spUSD').textContent = fmtUSD(spUSD);
+    $('spFIL').innerHTML = fmtFIL(spUSD/filPrice) + ' <span>locked</span>';
+    const pib = parseFloat($('pibExact').value) || 0;
+    const nwUSD = N * (pib * TIB_PER_PIB * price * A);
+    $('nwUSD').textContent = fmtUSD(nwUSD);
+    $('nwFIL').innerHTML = fmtFIL(nwUSD/filPrice) + ' <span>locked network-wide</span>';
+  }
+  function bindPair(slider, exact, label, fmt){
+    $(slider).addEventListener('input', e => {
+      $(exact).value = e.target.value;
+      if (label) $(label).textContent = fmt ? fmt(e.target.value) : e.target.value;
+      recalc();
+    });
+    $(exact).addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v) && v >= +$(slider).min && v <= +$(slider).max) $(slider).value = v;
+      if (label) $(label).textContent = fmt ? fmt(e.target.value) : e.target.value;
+      recalc();
+    });
+  }
+  bindPair('tib','tibExact','vTiB', v => fmtNum(parseFloat(v)));
+  bindPair('pib','pibExact','vPiB', null);
+  ['N','A','price','fil'].forEach(id => $(id).addEventListener('input', recalc));
+  recalc();
+</script>
+</body>
+</html>
